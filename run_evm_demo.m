@@ -15,7 +15,7 @@ cfg = struct();
 
 % --- Path setup ---
 cfg.projectRoot = fileparts(mfilename('fullpath'));   % folder containing run_evm_demo.m
-cfg.dataDir     = fullfile(cfg.projectRoot, 'data');
+cfg.dataDir = fullfile(projectRoot, "data", "demo");   % default: use included demo dataset
 
 % Prefer saving inside the project if writable; otherwise fallback to userpath
 cfg.resultsDir  = fullfile(cfg.projectRoot, 'results');
@@ -32,7 +32,7 @@ catch
 end
 
 % Data folder is relative to the repo
-cfg.dataDir = fullfile(projectRoot, "data");   % keep data out of git
+cfg.dataDir = fullfile(projectRoot, "data", "demo");   % keep data out of git
 
 % Results: prefer ./results (inside repo) if writable; otherwise fallback to userpath
 repoResultsDir = fullfile(projectRoot, "results");
@@ -98,6 +98,17 @@ cfg.maxDurationSec = 30;
 
 
 %% Load ECG + estimate HR
+if ~isfile(cfg.ecgRestFile) || ~isfile(cfg.ecgActiveFile)
+    fprintf("ECG files missing. Please select REST and ACTIVE ECG .txt files...\n");
+    [f1,p1] = uigetfile({'*.txt','ECG text (*.txt)'}, 'Select REST ECG file', cfg.dataDir);
+    assert(~isequal(f1,0), "No REST ECG selected.");
+    cfg.ecgRestFile = fullfile(p1,f1);
+
+    [f2,p2] = uigetfile({'*.txt','ECG text (*.txt)'}, 'Select ACTIVE ECG file', cfg.dataDir);
+    assert(~isequal(f2,0), "No ACTIVE ECG selected.");
+    cfg.ecgActiveFile = fullfile(p2,f2);
+end
+
 assert_file_exists(cfg.ecgRestFile);
 assert_file_exists(cfg.ecgActiveFile);
 
@@ -144,12 +155,6 @@ end
 % Final hard check
 assert_file_exists(restVidPath);
 assert_file_exists(activeVidPath);
-
-assert_file_exists(cfg.videoRestFile);
-assert_file_exists(cfg.videoActiveFile);
-
-restVidPath   = cfg.videoRestFile;
-activeVidPath = cfg.videoActiveFile;
 
 [restSig, tRestVid, roiRest]       = read_video_roi_rgb(restVidPath, cfg.channel, cfg.roiRestPreset, cfg.maxDurationSec);
 [activeSig, tActiveVid, roiActive] = read_video_roi_rgb(activeVidPath, cfg.channel, cfg.roiActivePreset, cfg.maxDurationSec);
